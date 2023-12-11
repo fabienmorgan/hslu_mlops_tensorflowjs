@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>TensorFlow.js Inference</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  </head>
+  <body>
+    <h1>TensorFlow.js Inference</h1>
+    <textarea id="inputArray" rows="28" cols="50"></textarea>
+    <button onclick="runInference()">Run Inference</button>
+    <div id="output"></div>
+
+    <script>
+      let model;
+
+      async function loadModel() {
+        model = await tf.loadGraphModel("tfjs-model/model.json");
+      }
+
+      async function runInference() {
+        const inputArray = JSON.parse(
+          document.getElementById("inputArray").value
+        );
+        const inputTensor = tf.tensor(inputArray).reshape([1, 28, 28]);
+        const outputTensor = model.predict(inputTensor);
+        const outputArray = Array.from(outputTensor.dataSync());
+        document.getElementById("output").innerText = outputArray;
+      }
+
+      loadModel();
+    </script>
+  </body>
+</html>

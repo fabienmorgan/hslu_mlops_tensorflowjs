@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  </head>
+  <body>
+    <script>
+      // Fetch the MNIST data
+      fetch("mnist.json")
+        .then((response) => response.json())
+        .then((data) => {
+          // Prepare the data
+          const trainingSet = data.training;
+          const testingSet = data.test;
+
+          // Sets the backend to CPU to compare performance
+          tf.setBackend("cpu");
+
+          // Your TensorFlow.js code here
+          const model = tf.sequential();
+          model.add(tf.layers.flatten({ inputShape: [28, 28] }));
+          model.add(tf.layers.dense({ units: 100, activation: "relu" }));
+          model.add(tf.layers.dense({ units: 100, activation: "relu" }));
+          model.add(tf.layers.dense({ units: 100, activation: "relu" }));
+          model.add(tf.layers.dense({ units: 10, activation: "softmax" }));
+
+          // Compile the model
+          model.compile({
+            optimizer: "adam",
+            loss: "categoricalCrossentropy",
+            metrics: ["accuracy"],
+          });
+
+          // Convert the training data to tensors
+          const xs = tf.stack(
+            trainingSet.map((item) => tf.tensor2d(item.input, [28, 28]))
+          );
+
+          const ys = tf.tensor2d(trainingSet.map((item) => item.output));
+
+          if (tf.getBackend() === "webgl") {
+            console.log("Training runs on GPU.");
+          } else {
+            console.log("Training runs on CPU.");
+          }
+
+          console.log(`Number of training samples: ${trainingSet.length}`);
+
+          model.summary();
+          let batchCounter = 0;
+
+          const startTime = Date.now();
+          model
+            .fit(xs, ys, {
+              epochs: 50,
+              batchCounter: 32,
+              validationSplit: 0.2,
+              shuffle: true,
+              // OPTIONAL Logging: Performance more then halfs with the logging on
+              /*
+              callbacks: {
+                onBatchEnd: async (batch, logs) => {
+                  batchCounter++;
+                },
+                onEpochEnd: async (epoch, logs) => {
+                  console.log(
+                    `Epoch ${epoch + 1} complete; loss: ${
+                      logs.loss
+                    }; accuracy: ${logs.acc}; val_loss: ${
+                      logs.val_loss
+                    }; val_accuracy: ${logs.val_acc}`
+                  );
+                  console.log(`Number of batches processed: ${batchCounter}`);
+                  // Reset the batch counter at the end of each epoch
+                  batchCounter = 0;
+                },
+              },*/
+            })
+            .then(() => {
+              // Record the end time
+              const endTime = Date.now();
+
+              // Calculate and log the total training time
+              const totalTime = (endTime - startTime) / 1000;
+              console.log(
+                `Training complete. Total time: ${totalTime} seconds`
+              );
+            });
+        });
+    </script>
+  </body>
+</html>
